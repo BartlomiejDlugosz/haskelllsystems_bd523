@@ -1,6 +1,6 @@
 module LSystems ( LSystem(LSystem), ColouredLine, Command(..)
                 , angle, axiom, rules, lookupChar
-                , expandOne, expand, move, parse, getBrackets, trace1, trace2
+                , expandOne, expand, move, parse, trace1, trace2
                 , expandLSystem, commandMap ) where
 
 import IC.Colour
@@ -63,17 +63,7 @@ move F a ((x, y), angle) = ((x + cos rad, y + sin rad), angle)
 move L a (vertex, angle) = (vertex, angle + a)
 move R a (vertex, angle) = (vertex, angle - a)
 move _ _ state = state
-
-getBrackets :: [Char] -> Int -> ([Char], [Char])
-getBrackets (']':xs) 0 = ("", xs)
-getBrackets (x:xs) n = (x:a, b)
-        where
-                (a, b) = getBrackets xs y
-                y | x == '[' = n + 1
-                  | x == ']' = n - 1
-                  | otherwise = n
                 
-
 parse :: Rules Command -> [Char] -> [Command]
 parse _ [] = []
 parse r (x:xs) 
@@ -81,6 +71,14 @@ parse r (x:xs)
         | otherwise = concat (lookupChar r x : [parse r xs])
         where
                 (a, b) = getBrackets xs 0
+                getBrackets :: [Char] -> Int -> ([Char], [Char])
+                getBrackets (']':xs) 0 = ("", xs)
+                getBrackets (x:xs) n = (x:a, b)
+                        where
+                                (a, b) = getBrackets xs y
+                                y       | x == '[' = n + 1
+                                        | x == ']' = n - 1
+                                        | otherwise = n
 
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
 trace1 [] _ _ = []
@@ -93,14 +91,37 @@ trace1 c f col = scanner ((0,0),90) f c col
 
                 scanner initial f (x:xs) col
                         | vertex1 == vertex2 = scanner state f xs col
-                        | otherwise = (vertex1, vertex2, col) : scanner state f xs col --state : scanner state f xs
+                        | otherwise = (vertex1, vertex2, col) : scanner state f xs col
                         where
                                 (vertex1, _) = initial
                                 state@(vertex2, _) = move x f initial
 
 -- This version uses an explicit stack of residual commands and turtle states
 trace2 :: [Command] -> Float -> Colour -> [ColouredLine]
-trace2 = undefined
+trace2 c f col = lines
+        where
+                executeCommands :: TurtleState -> [Command] -> Float -> Colour -> ([ColouredLine], [(TurtleState, [Command])])
+                executeCommands _ [] _ _ = ([], [])
+
+                executeCommands state ((B c):cs) f col = (first,(state, c) : second)
+                        where
+                                (first, second) = executeCommands state cs f col
+
+                executeCommands state (c:cs) f col 
+                        | vertex1 == vertex2 = (first, second)
+                        | otherwise = ((vertex1, vertex2, col) : first, second)
+                        where
+                                (vertex1, _) = state
+                                s@(vertex2, _) = move c f state
+                                (first, second) = executeCommands s cs f col
+
+                stackManager :: ([ColouredLine], [(TurtleState, [Command])]) -> Float -> Colour -> ([ColouredLine], [(TurtleState, [Command])])
+                stackManager (lines, []) _ _ = (lines, [])
+                stackManager (lines, (state, commands):xs) f col = stackManager (concat(lines : [lines2]), concat(xs : [stack])) f col
+                        where
+                                (lines2, stack) = executeCommands state commands f col
+
+                (lines, _) = stackManager (executeCommands ((0,0),90) c f col) f col
 
 -- Provided Functions
 ------------------------------------------------------------------------------
