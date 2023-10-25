@@ -1,6 +1,6 @@
 module LSystems ( LSystem(LSystem), ColouredLine, Command(..)
                 , angle, axiom, rules, lookupChar
-                , expandOne, expand, move, parse, getBrackets, trace1, trace2, scanner
+                , expandOne, expand, move, parse, getBrackets, trace1, trace2
                 , expandLSystem, commandMap ) where
 
 import IC.Colour
@@ -82,32 +82,21 @@ parse r (x:xs)
         where
                 (a, b) = getBrackets xs 0
 
--- linker :: [TurtleState] -> Colour -> [ColouredLine]
--- linker [] _ = []
--- linker [x] col = []
--- linker (x:xs:xss) col
---         | vertex1 == vertex2 = linker (xs:xss) col
---         | otherwise = (vertex1, vertex2, col) : linker (xs:xss) col
---         where
---                 (vertex1, _) = x
---                 (vertex2, _) = xs
-
-scanner :: TurtleState -> Float -> [Command] -> Colour -> [ColouredLine]
-scanner _ _ [] col = []
-
-scanner initial f ((B (x:xs)):xss) col = concat (scanner initial f (x:xs) col : [scanner initial f xss col])
-
-scanner initial f (x:xs) col
-        | vertex1 == vertex2 = scanner state f xs col
-        | otherwise = (vertex1, vertex2, col) : scanner state f xs col --state : scanner state f xs
-        where
-                (vertex1, _) = initial
-                state@(vertex2, _) = move x f initial
-
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
 trace1 [] _ _ = []
--- trace1 c f col = linker (scanl (\x y -> move y f x) ((0,0),90) c) col
 trace1 c f col = scanner ((0,0),90) f c col
+        where
+                scanner :: TurtleState -> Float -> [Command] -> Colour -> [ColouredLine]
+                scanner _ _ [] col = []
+
+                scanner initial f ((B x):xs) col = concat (scanner initial f x col : [scanner initial f xs col])
+
+                scanner initial f (x:xs) col
+                        | vertex1 == vertex2 = scanner state f xs col
+                        | otherwise = (vertex1, vertex2, col) : scanner state f xs col --state : scanner state f xs
+                        where
+                                (vertex1, _) = initial
+                                state@(vertex2, _) = move x f initial
 
 -- This version uses an explicit stack of residual commands and turtle states
 trace2 :: [Command] -> Float -> Colour -> [ColouredLine]
