@@ -87,49 +87,47 @@ parse r (x:xs)
                 
 
 
-
-scanner :: TurtleState -> Float -> [Command] -> Colour -> [ColouredLine]
-scanner _ _ [] col = []
-
-scanner initial f ((B x):xs) col = scanner initial f x col ++ scanner initial f xs col
-
-scanner initial@(vertex1, _) f (x:xs) col
-        | vertex1 == vertex2 = scanner state f xs col
-        | otherwise = (vertex1, vertex2, col) : scanner state f xs col
-        where
-                state@(vertex2, _) = move x f initial
-
 trace1 :: [Command] -> Float -> Colour -> [ColouredLine]
 trace1 [] _ _ = []
-trace1 c f col = scanner ((0,0),90) f c col
-
-
-
-executeCommands :: TurtleState -> [Command] -> Float -> Colour -> ([ColouredLine], [(TurtleState, [Command])])
-executeCommands _ [] _ _ = ([], [])
-
-executeCommands state ((B c):cs) f col = (first,(state, c) : second)
+trace1 c f col = scanner ((0,0),90) c
         where
-                (first, second) = executeCommands state cs f col
+                scanner :: TurtleState -> [Command] -> [ColouredLine]
+                scanner _ [] = []
 
-executeCommands state@(vertex1, _) (c:cs) f col 
-        | vertex1 == vertex2 = (first, second)
-        | otherwise = ((vertex1, vertex2, col) : first, second)
-        where
-                s@(vertex2, _) = move c f state
-                (first, second) = executeCommands s cs f col
+                scanner initial ((B x):xs) = scanner initial x ++ scanner initial xs
 
-stackManager :: ([ColouredLine], [(TurtleState, [Command])]) -> Float -> Colour -> ([ColouredLine], [(TurtleState, [Command])])
-stackManager (lines, []) _ _ = (lines, [])
-stackManager (lines, (state, commands):xs) f col = stackManager (lines ++ lines2, xs ++ stack) f col
-        where
-                (lines2, stack) = executeCommands state commands f col
+                scanner initial@(vertex1, _) (x:xs)
+                        | vertex1 == vertex2 = scanner state xs
+                        | otherwise = (vertex1, vertex2, col) : scanner state xs
+                        where
+                                state@(vertex2, _) = move x f initial
+
 
 -- This version uses an explicit stack of residual commands and turtle states
 trace2 :: [Command] -> Float -> Colour -> [ColouredLine]
 trace2 c f col = lines
         where
-                (lines, _) = stackManager (executeCommands ((0,0),90) c f col) f col
+                (lines, _) = stackManager (executeCommands ((0,0),90) c)
+
+                executeCommands :: TurtleState -> [Command] -> ([ColouredLine], [(TurtleState, [Command])])
+                executeCommands _ [] = ([], [])
+
+                executeCommands state ((B c):cs) = (first,(state, c) : second)
+                        where
+                                (first, second) = executeCommands state cs
+
+                executeCommands state@(vertex1, _) (c:cs)
+                        | vertex1 == vertex2 = (first, second)
+                        | otherwise = ((vertex1, vertex2, col) : first, second)
+                        where
+                                s@(vertex2, _) = move c f state
+                                (first, second) = executeCommands s cs
+
+                stackManager :: ([ColouredLine], [(TurtleState, [Command])]) -> ([ColouredLine], [(TurtleState, [Command])])
+                stackManager (lines, []) = (lines, [])
+                stackManager (lines, (state, commands):xs) = stackManager (lines ++ lines2, xs ++ stack)
+                        where
+                                (lines2, stack) = executeCommands state commands
 
 -- Provided Functions
 ------------------------------------------------------------------------------
