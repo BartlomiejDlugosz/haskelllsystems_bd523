@@ -74,7 +74,7 @@ toColor3 Red     = Color3 1 0 0
 toColor3 Green   = Color3 0 1 0
 toColor3 Blue    = Color3 0 0 1
 toColor3 Cyan    = Color3 0 1 1
-toColor3 Magenta = Color3 1 0 0
+toColor3 Magenta = Color3 1 0 1
 toColor3 Yellow  = Color3 1 1 0
 
 keyboardMouse :: Key -> KeyState -> Modifiers -> Position -> IO ()
