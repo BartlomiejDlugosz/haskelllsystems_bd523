@@ -112,9 +112,9 @@ trace2 c f col = lines
                 executeCommands :: TurtleState -> [Command] -> ([ColouredLine], [(TurtleState, [Command])])
                 executeCommands _ [] = ([], [])
 
-                executeCommands state ((B c):cs) = (first,(state, c) : second)
+                executeCommands state ((B c):cs) = (first,(state, cs) : second)
                         where
-                                (first, second) = executeCommands state cs
+                                (first, second) = executeCommands state c
 
                 executeCommands state@(vertex1, _) (c:cs)
                         | vertex1 == vertex2 = (first, second)
