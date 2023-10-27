@@ -2,8 +2,13 @@ module Examples where
 
 import LSystems (LSystem(LSystem))
 
-cross, triangle, arrowHead, peanoGosper       :: LSystem
+test, cross, triangle, arrowHead, peanoGosper       :: LSystem
 dragon, snowflake, tree, bush, canopy, galaxy :: LSystem
+
+test = LSystem 45 "--M" [ ('M', "-M++M-")
+                             , ('+', "+")
+                             , ('-', "-")
+                             ]
 
 cross = LSystem 90 "M-M-M-M" [ ('M', "M-M+M+MM-M-M+M")
                              , ('+', "+")
